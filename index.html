@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taboo — HTML + JS + Bootstrap</title>
+  <!-- Bootstrap 5 CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8f9fa; }
+    .card-main-word { font-size: 2.5rem; font-weight: 700; }
+    .forbidden-word { font-size: 1.2rem; }
+    .timer-circle { width: 140px; height: 140px; border-radius: 50%; display:flex; align-items:center; justify-content:center; }
+    .muted-small { font-size: .85rem; color:#6c757d; }
+    @media (max-width: 576px) {
+      .card-main-word { font-size: 1.6rem; }
+      .forbidden-word { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h4 mb-0">Taboo — Quick Browser Version</h1>
+      <div>
+        <button id="btnSettings" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal">Settings</button>
+        <button id="btnReset" class="btn btn-outline-danger btn-sm">Reset</button>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+              <div>
+                <div class="muted-small">Round: <span id="roundDisplay">0</span></div>
+                <div class="muted-small">Remaining cards: <span id="remainingDisplay">0</span></div>
+              </div>
+              <div>
+                <div class="muted-small">Score: <span id="scoreDisplay">0</span></div>
+                <div class="muted-small">Passes: <span id="passDisplay">0</span></div>
+              </div>
+            </div>
+
+            <div class="text-center py-3">
+              <div id="mainWordCard" class="p-4 bg-white rounded-3 border card-main-word">—</div>
+              <div class="mt-3">
+                <ul id="forbiddenList" class="list-unstyled d-flex flex-wrap gap-2 justify-content-center mt-2"></ul>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-center gap-2 mt-4">
+              <button id="btnCorrect" class="btn btn-success btn-lg">Correct (Space)</button>
+              <button id="btnPass" class="btn btn-warning btn-lg">Pass (P)</button>
+              <button id="btnNext" class="btn btn-info btn-lg">Next</button>
+            </div>
+
+            <div class="text-center mt-4">
+              <div id="timerWrap" class="d-inline-block timer-circle border" title="Timer">
+                <div>
+                  <div class="h3 mb-0" id="timerDisplay">60</div>
+                  <div class="muted-small">seconds</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mt-3 muted-small">Controls: Start/Pause (S) · Correct (Space) · Pass (P) · Next (N)</div>
+
+          </div>
+        </div>
+
+        <div class="mt-3 card shadow-sm">
+          <div class="card-body">
+            <h5 class="mb-3">Log / History</h5>
+            <div id="history" style="min-height:80px; max-height:160px; overflow:auto; background:#fff; padding:10px; border-radius:6px; border:1px solid #e9ecef;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card shadow-sm mb-3">
+          <div class="card-body">
+            <h5>Deck</h5>
+            <p class="muted-small">Click a card to remove it or to mark it used.</p>
+            <div id="deckList" style="min-height:200px; max-height:420px; overflow:auto;"></div>
+          </div>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="mb-2">Quick Actions</h5>
+            <div class="d-grid gap-2">
+              <button id="btnStart" class="btn btn-primary">Start / Pause (S)</button>
+              <button id="btnShuffle" class="btn btn-outline-secondary">Shuffle Deck</button>
+              <button id="btnReveal" class="btn btn-outline-dark">Reveal Answer</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Settings & Custom Deck</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Seconds per card</label>
+            <input id="inputSeconds" type="number" class="form-control" value="60" min="10" max="300">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Sample / Custom deck (JSON array of objects). Example:</label>
+            <textarea id="inputDeck" rows="6" class="form-control"></textarea>
+            <div class="form-text">Each object: {"word":"Main","forbidden":["a","b","c","d","e"]}</div>
+          </div>
+
+          <div class="mb-3">
+            <button id="btnLoadDeck" class="btn btn-success">Load Deck</button>
+            <button id="btnUseSample" class="btn btn-outline-secondary">Load Sample Deck</button>
+          </div>
+
+          <hr>
+          <div>
+            <h6>Keyboard Shortcuts</h6>
+            <ul>
+              <li><strong>S</strong> start / pause timer</li>
+              <li><strong>Space</strong> mark correct (score)</li>
+              <li><strong>P</strong> pass</li>
+              <li><strong>N</strong> next card</li>
+            </ul>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // ======= Sample Deck =======
+    const SAMPLE_DECK = [
+      {word: 'Beach', forbidden: ['Sand','Sun','Waves','Sea','Vacation']},
+      {word: 'Bicycle', forbidden: ['Pedal','Wheel','Ride','Helmet','Chain']},
+      {word: 'Pizza', forbidden: ['Cheese','Slice','Tomato','Oven','Pepperoni']},
+      {word: 'Piano', forbidden: ['Keys','Music','Play','Instrument','Bench']},
+      {word: 'Doctor', forbidden: ['Hospital','Stethoscope','Patient','Medicine','Nurse']},
+      {word: 'Football', forbidden: ['Goal','Kick','Ball','Team','Field']},
+      {word: 'Library', forbidden: ['Books','Quiet','Shelf','Borrow','Reading']},
+      {word: 'Camera', forbidden: ['Photo','Lens','Picture','Flash','Shoot']},
+      {word: 'Rainbow', forbidden: ['Colors','Sky','Arc','After','Rain']},
+      {word: 'Chocolate', forbidden: ['Sweet','Cocoa','Candy','Brown','Bar']}
+    ];
+
+    // ======= App State =======
+    let deck = [];
+    let pool = []; // indices left
+    let currentIndex = null; // index in deck
+    let timer = null;
+    let timeLeft = 60;
+    let isRunning = false;
+    let round = 0;
+    let score = 0;
+    let passes = 0;
+
+    // ======= DOM =======
+    const mainWordCard = document.getElementById('mainWordCard');
+    const forbiddenList = document.getElementById('forbiddenList');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const btnStart = document.getElementById('btnStart');
+    const btnCorrect = document.getElementById('btnCorrect');
+    const btnPass = document.getElementById('btnPass');
+    const btnNext = document.getElementById('btnNext');
+    const btnShuffle = document.getElementById('btnShuffle');
+    const btnReset = document.getElementById('btnReset');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const passDisplay = document.getElementById('passDisplay');
+    const roundDisplay = document.getElementById('roundDisplay');
+    const remainingDisplay = document.getElementById('remainingDisplay');
+    const history = document.getElementById('history');
+    const deckList = document.getElementById('deckList');
+    const btnReveal = document.getElementById('btnReveal');
+
+    const inputSeconds = document.getElementById('inputSeconds');
+    const inputDeck = document.getElementById('inputDeck');
+    const btnLoadDeck = document.getElementById('btnLoadDeck');
+    const btnUseSample = document.getElementById('btnUseSample');
+
+    // ======= Utilities =======
+    function shuffleArray(a) {
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function logEvent(text) {
+      const el = document.createElement('div');
+      el.textContent = text;
+      history.prepend(el);
+    }
+
+    // ======= Deck and UI =======
+    function loadDeck(arr) {
+      deck = JSON.parse(JSON.stringify(arr)); // clone
+      pool = deck.map((_,i)=>i);
+      updateDeckUI();
+      remainingDisplay.textContent = pool.length;
+      round = 0; score = 0; passes = 0;
+      updateStats();
+      stopTimer();
+      clearCard();
+    }
+
+    function updateDeckUI() {
+      deckList.innerHTML = '';
+      deck.forEach((c, i) => {
+        const card = document.createElement('div');
+        card.className = 'p-2 mb-1 border rounded d-flex justify-content-between align-items-center bg-white';
+        card.innerHTML = `<div><strong>${escapeHtml(c.word)}</strong><div class="muted-small">${c.forbidden.join(', ')}</div></div>`;
+        card.addEventListener('click', ()=>{
+          // toggle used state
+          const idxInPool = pool.indexOf(i);
+          if (idxInPool >= 0) {
+            pool.splice(idxInPool,1);
+            card.style.opacity = .5;
+          } else {
+            pool.push(i);
+            card.style.opacity = 1;
+          }
+          remainingDisplay.textContent = pool.length;
+        });
+        deckList.appendChild(card);
+      });
+    }
+
+    function pickNextCard(autoStart=true) {
+      if (!pool.length) {
+        clearCard();
+        logEvent('Deck exhausted. Load more cards or reset.');
+        return;
+      }
+      const idx = pool[Math.floor(Math.random()*pool.length)];
+      currentIndex = idx;
+      round++;
+      roundDisplay.textContent = round;
+      showCard(deck[idx]);
+      // mark used
+      const pos = pool.indexOf(idx);
+      if (pos >= 0) pool.splice(pos,1);
+      remainingDisplay.textContent = pool.length;
+      updateDeckUI();
+      if (autoStart) startTimer();
+    }
+
+    function showCard(card) {
+      mainWordCard.textContent = card.word;
+      forbiddenList.innerHTML = '';
+      card.forbidden.forEach(f => {
+        const li = document.createElement('li');
+        li.className = 'badge bg-danger text-white forbidden-word p-2';
+        li.style.margin = '0 6px';
+        li.textContent = f;
+        forbiddenList.appendChild(li);
+      });
+    }
+
+    function clearCard() {
+      currentIndex = null;
+      mainWordCard.textContent = '—';
+      forbiddenList.innerHTML = '';
+      timerDisplay.textContent = inputSeconds.value;
+      remainingDisplay.textContent = pool.length;
+    }
+
+    function updateStats() {
+      scoreDisplay.textContent = score;
+      passDisplay.textContent = passes;
+    }
+
+    // ======= Timer =======
+    function startTimer() {
+      if (isRunning) return;
+      timeLeft = parseInt(inputSeconds.value,10) || 60;
+      timerDisplay.textContent = timeLeft;
+      isRunning = true;
+      timer = setInterval(()=>{
+        timeLeft--;
+        timerDisplay.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          isRunning = false;
+          logEvent('Time up for card: ' + (currentIndex!==null ? deck[currentIndex].word : '—'));
+          // automatically pick next card if available
+          if (pool.length) {
+            setTimeout(()=>pickNextCard(true), 700);
+          }
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timer) clearInterval(timer);
+      timer = null;
+      isRunning = false;
+    }
+
+    function toggleStartPause() {
+      if (!currentIndex) { pickNextCard(true); return; }
+      if (isRunning) stopTimer(); else startTimer();
+    }
+
+    // ======= Actions =======
+    btnStart.addEventListener('click', toggleStartPause);
+    btnCorrect.addEventListener('click', ()=>{
+      if (!currentIndex) return;
+      score++;
+      updateStats();
+      logEvent('Correct: ' + deck[currentIndex].word);
+      stopTimer();
+      if (pool.length) pickNextCard(true);
+      else clearCard();
+    });
+    btnPass.addEventListener('click', ()=>{
+      if (!currentIndex) return;
+      passes++;
+      updateStats();
+      logEvent('Pass: ' + deck[currentIndex].word);
+      stopTimer();
+      if (pool.length) pickNextCard(true);
+      else clearCard();
+    });
+    btnNext.addEventListener('click', ()=>{
+      stopTimer();
+      if (pool.length) pickNextCard(true);
+      else clearCard();
+    });
+
+    btnShuffle.addEventListener('click', ()=>{
+      pool = shuffleArray(pool);
+      updateDeckUI();
+      remainingDisplay.textContent = pool.length;
+      logEvent('Deck shuffled');
+    });
+
+    btnReset.addEventListener('click', ()=>{
+      if (!confirm('Reset score, passes, rounds and reload initial deck?')) return;
+      loadDeck(SAMPLE_DECK);
+      inputSeconds.value = 60;
+      inputDeck.value = '';
+      logEvent('Reset to sample deck');
+    });
+
+    btnReveal.addEventListener('click', ()=>{
+      if (!currentIndex) return;
+      alert('Answer: ' + deck[currentIndex].word + '\nForbidden: ' + deck[currentIndex].forbidden.join(', '));
+    });
+
+    // ======= Settings modal actions =======
+    btnUseSample.addEventListener('click', ()=>{
+      inputDeck.value = JSON.stringify(SAMPLE_DECK, null, 2);
+    });
+
+    btnLoadDeck.addEventListener('click', ()=>{
+      let raw = inputDeck.value.trim();
+      if (!raw) { alert('Please paste JSON for deck or use sample'); return; }
+      try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) throw new Error('Deck must be an array');
+        // basic validation
+        parsed.forEach((c, i)=>{
+          if (!c.word || !Array.isArray(c.forbidden)) throw new Error('Each card needs "word" and "forbidden" array (error at index '+i+')');
+        });
+        loadDeck(parsed);
+        const modalEl = document.getElementById('settingsModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        modal.hide();
+        logEvent('Custom deck loaded ('+parsed.length+' cards)');
+      } catch (e) {
+        alert('Invalid JSON: ' + e.message);
+      }
+    });
+
+    // ======= Keyboard shortcuts =======
+    document.addEventListener('keydown', (ev)=>{
+      if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA')) return; // ignore while typing
+      if (ev.code === 'Space') { ev.preventDefault(); btnCorrect.click(); }
+      if (ev.key.toLowerCase() === 'p') { btnPass.click(); }
+      if (ev.key.toLowerCase() === 's') { toggleStartPause(); }
+      if (ev.key.toLowerCase() === 'n') { btnNext.click(); }
+    });
+
+    // ======= Escape HTML helper =======
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, function(tag) {
+        const charsToReplace = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"};
+        return charsToReplace[tag] || tag;
+      });
+    }
+
+    // ======= Init =======
+    (function init(){
+      inputDeck.value = JSON.stringify(SAMPLE_DECK, null, 2);
+      loadDeck(SAMPLE_DECK);
+      timerDisplay.textContent = inputSeconds.value;
+      logEvent('Ready — load a deck and press Start (S)');
+    })();
+
+  </script>
+</body>
+</html>
