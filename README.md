@@ -1,6 +1,8 @@
 # Taboo Game
 
 A fast, ad-free, two-team Taboo game built with Bootstrap and vanilla JavaScript.
+<img width="416" height="704" alt="image" src="https://github.com/user-attachments/assets/1092ed97-c9d8-4c2a-a4e7-1d0e19e8cb16" />
+
 
 ## Features
 
