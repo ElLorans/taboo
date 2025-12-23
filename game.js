@@ -28,16 +28,15 @@ const passCountDisplay = document.getElementById('passCount');
 function getNewWord() {
     let selectedDb = document.querySelector('input[name="dbCategory"]:checked').value;
     let words = data[selectedDb];
-    if (Object.entries(words).length === 0) {
+    let keys = Object.keys(words);
+    if (keys.length === 0) {
         alert("All words used! Refresh the page to start from the beginning.");
     }
-
-    let keys = Object.keys(words);
     let randomKey = keys[Math.floor(Math.random() * keys.length)];
     let forbidden_words = words[randomKey];
 
     currentWordDisplay.textContent = randomKey;
-    forbiddenWordsDisplay.innerHTML = forbidden_words.map(w => `<span class="badge bg-danger mx-1">${w}</span>`).join('');
+    forbiddenWordsDisplay.innerHTML = forbidden_words.sort().map(w => `<span class="badge bg-danger mx-1">${w}</span>`).join('');
     delete words[randomKey]; // Prevent using same word twice
 }
 
